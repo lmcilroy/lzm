@@ -48,12 +48,16 @@ hash_high(const unsigned int seq)
 	return (seq * 2654435761U) >> (32 - HASH_ORDER_HIGH);
 }
 
+__attribute__((aligned(64)))
+unsigned char run[9] = { 0, 8, 8, 6, 8, 5, 6, 7, 8 };
+
 static inline int
 matchlen_run(const unsigned char * const start,
-    const unsigned char * const last, const unsigned char * const end)
+    const unsigned char * const last, const unsigned char * const end,
+    const unsigned int bytes)
 {
 	const unsigned char *curr = start;
-	unsigned long currval, lastval, off;
+	unsigned long currval, lastval;
 
 	if (last < (end - 7)) {
 		lastval = readmem64(last);
@@ -62,15 +66,15 @@ matchlen_run(const unsigned char * const start,
 			currval = readmem64(curr);
 			if (lastval != currval)
 				return (__builtin_ctzl(lastval ^ currval) >> 3);
-			curr += 8;
+			curr += bytes;
 		}
 		while (curr < (end - 7)) {
 			currval = readmem64(curr);
 			if (lastval != currval) {
-				off = __builtin_ctzl(lastval ^ currval) >> 3;
-				return (curr - start) + off;
+				return (curr - start) +
+				    (__builtin_ctzl(lastval ^ currval) >> 3);
 			}
-			curr += 8;
+			curr += bytes;
 		}
 	} else {
 		lastval = readmem32(last);
@@ -85,20 +89,17 @@ matchlen_run(const unsigned char * const start,
 	return curr - start;
 }
 
-__attribute__((aligned(64)))
-unsigned char run[9] = { 0, 1, 1, 0, 1, 0, 0, 0, 1 };
-
 static inline int
 matchlen(const unsigned char * const start, const unsigned char * const match,
     const unsigned char * const end)
 {
 	const unsigned char *curr = start;
 	const unsigned char *last = match;
-	unsigned long currval, lastval, off;
+	unsigned long currval, lastval;
+	const unsigned int off = start - match;
 
-	off = start - match;
-	if (off <= 8 && (run[off] == 1))
-		return matchlen_run(start, match, end);
+	if (off <= 8)
+		return matchlen_run(start, match, end, run[off]);
 
 	if (likely(curr < (end - 7))) {
 		lastval = readmem64(last);
@@ -112,8 +113,8 @@ matchlen(const unsigned char * const start, const unsigned char * const match,
 		lastval = readmem64(last);
 		currval = readmem64(curr);
 		if (lastval != currval) {
-			off = __builtin_ctzl(lastval ^ currval) >> 3;
-			return (curr - start) + off;
+			return (curr - start) +
+			    (__builtin_ctzl(lastval ^ currval) >> 3);
 		}
 		last += 8;
 		curr += 8;
@@ -122,8 +123,8 @@ matchlen(const unsigned char * const start, const unsigned char * const match,
 		lastval = readmem32(last);
 		currval = readmem32(curr);
 		if (lastval != currval) {
-			off = (__builtin_ctz(lastval ^ currval) >> 3);
-			return (curr - start) + off;
+			return (curr - start) +
+			    (__builtin_ctz(lastval ^ currval) >> 3);
 		}
 		last += 4;
 		curr += 4;
