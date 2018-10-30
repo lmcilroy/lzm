@@ -110,7 +110,6 @@ compress_fd(const int fd_in, const int fd_out,
 	unsigned int size_out;
 	unsigned int size_in;
 	unsigned int size_flag;
-	unsigned int comp_size;
 	unsigned int write_size;
 	unsigned int header;
 	int ret;
@@ -123,12 +122,11 @@ compress_fd(const int fd_in, const int fd_out,
 		goto out;
 	}
 
-	comp_size = args->chunk_size;
-	ret = posix_memalign((void **)&buffer_out, pagesize, comp_size);
+	ret = posix_memalign((void **)&buffer_out, pagesize, args->chunk_size);
 	if (ret != 0) {
 		ret = ENOMEM;
 		fprintf(stderr, "File %s: failed to allocate %d bytes: %s\n",
-		    args->filename, comp_size, strerror(ret));
+		    args->filename, args->chunk_size, strerror(ret));
 		goto out;
 	}
 
@@ -180,7 +178,7 @@ compress_fd(const int fd_in, const int fd_out,
 		if (size_in == 0)
 			break;
 
-		size_out = comp_size;
+		size_out = args->chunk_size;
 		size_flag = 0;
 		write_buffer = buffer_out;
 		ret = lzm_encode(state, buffer_in, size_in, buffer_out,
@@ -250,7 +248,6 @@ decompress_fd(const int fd_in, const int fd_out,
 	off_t total_out = 0;
 	unsigned int size_out;
 	unsigned int size_in;
-	unsigned int comp_size;
 	unsigned int header;
 	unsigned int bytes;
 	unsigned int no_compression;
@@ -321,13 +318,12 @@ decompress_fd(const int fd_in, const int fd_out,
 		goto out;
 	}
 
-	comp_size = lzm_compressed_size(args->chunk_size);
-	ret = posix_memalign((void **)&buffer_in, pagesize, comp_size);
+	ret = posix_memalign((void **)&buffer_in, pagesize, args->chunk_size);
 	if (ret != 0) {
 		ret = ENOMEM;
 		fprintf(stderr,
 		    "File %s: failed to allocate memory (%d bytes): %s\n",
-		    args->filename, comp_size, strerror(ret));
+		    args->filename, args->chunk_size, strerror(ret));
 		goto out;
 	}
 
@@ -376,7 +372,7 @@ decompress_fd(const int fd_in, const int fd_out,
 			size_in &= ~LZM_NO_COMPRESSION;
 		}
 
-		if (size_in > comp_size) {
+		if (size_in > args->chunk_size) {
 			ret = EINVAL;
 			fprintf(stderr, "File %s: Invalid chunk size\n",
 			    args->filename);
@@ -698,12 +694,12 @@ benchmark_level(struct compress_args * const args, struct chunk *chunks,
 }
 
 static unsigned int
-benchmark_init_chunk(const int fd_in, struct chunk *chunk,
-    struct compress_args * const args)
+benchmark_init_chunk(const int fd_in, struct chunk * const chunk,
+    const unsigned int chunk_size, struct compress_args * const args)
 {
 	int ret;
 
-	chunk->size_orig = args->chunk_size;
+	chunk->size_orig = chunk_size;
 	ret = posix_memalign((void **)&chunk->data_orig, pagesize,
 	    chunk->size_orig);
 	if (ret != 0) {
@@ -739,9 +735,9 @@ benchmark_init_chunk(const int fd_in, struct chunk *chunk,
 		goto out;
 	}
 
-	if (chunk->size_orig == 0) {
+	if (chunk->size_orig != chunk_size) {
 		ret = EINVAL;
-		fprintf(stderr, "File %s: empty file, skipping\n",
+		fprintf(stderr, "File %s: not enough data read\n",
 		    args->filename);
 		goto out;
 	}
@@ -755,6 +751,8 @@ benchmark(const int fd_in, struct compress_args * const args)
 {
 	struct chunk *chunks;
 	cpu_set_t cpuset;
+	off_t bytes_left;
+	unsigned int chunk_size;
 	unsigned int c;
 	unsigned int nchunks;
 	unsigned int ret;
@@ -788,8 +786,11 @@ benchmark(const int fd_in, struct compress_args * const args)
 
 	setpriority(PRIO_PROCESS, 0, -20);
 
+	bytes_left = args->st->st_size;
 	for (c = 0; c < nchunks; c++) {
-		ret = benchmark_init_chunk(fd_in, &chunks[c], args);
+		chunk_size = MIN(bytes_left, args->chunk_size);
+		bytes_left -= chunk_size;
+		ret = benchmark_init_chunk(fd_in, &chunks[c], chunk_size, args);
 		if (ret != 0)
 			goto out;
 	}
