@@ -74,7 +74,7 @@ lzm_decode(
     const unsigned char * const buffer_in,
     const unsigned int size_in,
     unsigned char * const buffer_out,
-    unsigned int *size_out)
+    unsigned int * const size_out)
 {
 	const unsigned char * const end = buffer_in + size_in;
 	const unsigned char * const match_end = end - 5;

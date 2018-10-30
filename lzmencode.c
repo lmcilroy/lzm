@@ -443,7 +443,7 @@ lzm_encode_none(
     const unsigned char * const buffer_in,
     const unsigned int size_in,
     unsigned char * const buffer_out,
-    unsigned int *size_out)
+    unsigned int * const size_out)
 {
 	unsigned char *curr_out;
 
@@ -464,7 +464,7 @@ lzm_encode_fast(
     const unsigned char * const buffer_in,
     const unsigned int size_in,
     unsigned char * const buffer_out,
-    unsigned int *size_out)
+    unsigned int * const size_out)
 {
 	const unsigned char * const end = buffer_in + size_in;
 	const unsigned char * const match_end = end - 7;
@@ -561,7 +561,7 @@ lzm_encode_high(
     const unsigned char * const buffer_in,
     const unsigned int size_in,
     unsigned char * const buffer_out,
-    unsigned int *size_out)
+    unsigned int * const size_out)
 {
 	const unsigned char * const end = buffer_in + size_in;
 	const unsigned char * const match_end = end - 7;
@@ -716,7 +716,7 @@ typedef unsigned int (*lzm_codec_func)(
     const unsigned char * const buffer_in,
     const unsigned int size_in,
     unsigned char * const buffer_out,
-    unsigned int *size_out);
+    unsigned int * const size_out);
 
 struct lzm_config {
 	lzm_codec_func	codec;
@@ -821,7 +821,7 @@ unsigned int
 lzm_encode(const struct lzm_state * const state,
     const unsigned char * const buffer_in,
     const unsigned int size_in, unsigned char * const buffer_out,
-    unsigned int *size_out)
+    unsigned int * const size_out)
 {
 	int error;
 
