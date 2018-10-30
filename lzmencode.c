@@ -773,9 +773,9 @@ lzm_encode_init(struct lzm_state ** const state, const unsigned int format,
 
 	statep->level = ilevel;
 	statep->format = format;
-	statep->hash_order = lzm_encode_config[level].hash_order;
+	statep->hash_order = lzm_encode_config[statep->level].hash_order;
 	statep->hash_buckets = 1 << statep->hash_order;
-	statep->chain_order = lzm_encode_config[level].chain_order;
+	statep->chain_order = lzm_encode_config[statep->level].chain_order;
 	statep->chain_mask = (1 << statep->chain_order) - 1;
 	statep->last_ht = NULL;
 	statep->chains = NULL;
