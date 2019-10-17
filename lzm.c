@@ -446,16 +446,12 @@ static unsigned int
 output_filename(struct compress_args * const args)
 {
 	unsigned int len;
-	unsigned int maxlen;
 	int ret = 0;
 
 	if (args->compress) {
-		len = strlen(args->filename);
-		maxlen = sizeof(args->filename_out) - sizeof(SUFFIX);
-		if (len > maxlen)
-			len = maxlen;
+		len = sizeof(args->filename_out);
 		strncpy(args->filename_out, args->filename, len);
-		args->filename_out[len] = 0;
+		args->filename_out[len - 1 - sizeof(SUFFIX)] = '\0';
 		strcat(args->filename_out, SUFFIX);
 	} else {
 		len = strlen(args->filename);
@@ -474,10 +470,9 @@ output_filename(struct compress_args * const args)
 			goto out;
 		}
 
-		if (len >= sizeof(args->filename_out))
-			len = sizeof(args->filename_out) - 1;
+		len = sizeof(args->filename_out);
 		strncpy(args->filename_out, args->filename, len);
-		args->filename_out[len] = '\0';
+		args->filename_out[len - 1] = '\0';
 	}
  out:
 	return ret;
