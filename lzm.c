@@ -470,9 +470,11 @@ output_filename(struct compress_args * const args)
 			goto out;
 		}
 
-		len = sizeof(args->filename_out);
-		strncpy(args->filename_out, args->filename, len);
-		args->filename_out[len - 1] = '\0';
+		strncpy(args->filename_out, args->filename,
+		    sizeof(args->filename_out));
+		if (len >= sizeof(args->filename_out))
+			len = sizeof(args->filename_out) - 1;
+		args->filename_out[len] = '\0';
 	}
  out:
 	return ret;
