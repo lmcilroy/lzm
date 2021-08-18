@@ -12,7 +12,8 @@ extern "C" {
 #define LZM_LEVEL_4	4
 #define LZM_LEVEL_5	5
 #define LZM_LEVEL_6	6
-#define LZM_LEVEL_COUNT	7
+#define LZM_LEVEL_7	7
+#define LZM_LEVEL_COUNT	8
 
 #define LZM_LEVEL_DEF	0xFFFFFFFF
 #define LZM_LEVEL_NONE	LZM_LEVEL_0

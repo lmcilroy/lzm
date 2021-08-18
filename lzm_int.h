@@ -1,5 +1,6 @@
 #define HASH_ORDER_FAST		12
-#define HASH_ORDER_HIGH		16
+#define HASH_ORDER_MID		16
+#define HASH_ORDER_HIGH		20
 #define MAX_CHAIN_LENGTH	128
 #define MIN_MATCH		4
 #define MISS_ORDER		6

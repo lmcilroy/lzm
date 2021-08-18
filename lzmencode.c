@@ -36,16 +36,16 @@ lzm_compressed_size(const unsigned int size)
 	return (csize < size) ? size : csize;
 }
 
-static inline unsigned short
+static inline unsigned int
 hash_fast(const unsigned long seq)
 {
 	return ((seq * 0xAC565CAC35000000) >> (64 - HASH_ORDER_FAST));
 }
 
-static inline unsigned short
-hash_high(const unsigned int seq)
+static inline unsigned int
+hash_high(const unsigned int seq, const unsigned int hash_order)
 {
-	return (seq * 2654435761U) >> (32 - HASH_ORDER_HIGH);
+	return (seq * 2654435761U) >> (32 - hash_order);
 }
 
 __attribute__((aligned(64)))
@@ -482,8 +482,8 @@ lzm_encode_fast(
 	unsigned int len;
 	unsigned int off;
 	unsigned int misses = (1 << MISS_ORDER) + 1;
-	unsigned short hashval;
-	unsigned short next_hashval;
+	unsigned int hashval;
+	unsigned int next_hashval;
 
 	lzm_reset(state, buffer_in);
 
@@ -588,8 +588,8 @@ lzm_encode_high(
 	unsigned int curr_chain;
 	unsigned int index;
 	unsigned int misses = (1 << MISS_ORDER) + 1;
-	unsigned short hashval;
-	unsigned short next_hashval;
+	unsigned int hashval;
+	unsigned int next_hashval;
 
 	struct prev_match prev;
 
@@ -601,9 +601,9 @@ lzm_encode_high(
 	prev.length = 0;
 
 	token = readmem32(curr_in);
-	hashval = hash_high(token);
+	hashval = hash_high(token, state->hash_order);
 	next_token = readmem32(curr_in + 1);
-	next_hashval = hash_high(next_token);
+	next_hashval = hash_high(next_token, state->hash_order);
 	last_htp = &state->last_ht[hashval];
 	index = curr_in - buffer_in;
 	state->chains[index & state->chain_mask] = *last_htp;
@@ -616,7 +616,7 @@ lzm_encode_high(
 		hashval = next_hashval;
 		next_curr = curr_in + (misses >> MISS_ORDER);
 		next_token = readmem32(next_curr);
-		next_hashval = hash_high(next_token);
+		next_hashval = hash_high(next_token, state->hash_order);
 		last_htp = &state->last_ht[hashval];
 		last = last_htp->index + buffer_in;
 		last_token = last_htp->token;
@@ -693,7 +693,8 @@ lzm_encode_high(
 			hashval = next_hashval;
 			next_curr = curr_in + (misses >> MISS_ORDER);
 			next_token = readmem32(next_curr);
-			next_hashval = hash_high(next_token);
+			next_hashval = hash_high(next_token,
+			    state->hash_order);
 			last_htp = &state->last_ht[hashval];
 			index = curr_in - buffer_in;
 			state->chains[index & state->chain_mask] = *last_htp;
@@ -728,11 +729,12 @@ __attribute__((aligned(64)))
 struct lzm_config lzm_encode_config[LZM_LEVEL_COUNT] = {
 	{ lzm_encode_none, 		 0,  0 },
 	{ lzm_encode_fast, HASH_ORDER_FAST,  0 },
-	{ lzm_encode_high, HASH_ORDER_HIGH,  4 },
+	{ lzm_encode_high, HASH_ORDER_MID,   4 },
 	{ lzm_encode_high, HASH_ORDER_HIGH,  8 },
 	{ lzm_encode_high, HASH_ORDER_HIGH, 12 },
 	{ lzm_encode_high, HASH_ORDER_HIGH, 16 },
 	{ lzm_encode_high, HASH_ORDER_HIGH, 20 },
+	{ lzm_encode_high, HASH_ORDER_HIGH, 24 },
 };
 
 static int
