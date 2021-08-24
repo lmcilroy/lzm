@@ -1095,7 +1095,7 @@ main(int argc, char **argv)
 	args.chunk_size = CHUNK_SIZE;
 	args.bench_tests = BENCH_TESTS;
 
-	while ((c = getopt(argc, argv, "0123456b:cdfhkrtvx:")) != EOF) {
+	while ((c = getopt(argc, argv, "01234567b:cdfhkrtvx:")) != EOF) {
 		switch (c) {
 		case '0':
 		case '1':
@@ -1104,6 +1104,7 @@ main(int argc, char **argv)
 		case '4':
 		case '5':
 		case '6':
+		case '7':
 			args.level = c - '0';
 			break;
 		case 'b':
