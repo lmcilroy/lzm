@@ -53,10 +53,12 @@ unsigned char run[9] = { 0, 8, 8, 6, 8, 5, 6, 7, 8 };
 
 static inline int
 matchlen_run(const unsigned char * const start,
-    const unsigned char * const last, const unsigned char * const end,
+    const unsigned char * const match, const unsigned char * const end,
     const unsigned int bytes)
 {
 	const unsigned char *curr = start;
+	const unsigned char *last = match;
+	const unsigned int off = start - match;
 	unsigned long currval, lastval;
 
 	if (last < (end - 7)) {
@@ -76,14 +78,23 @@ matchlen_run(const unsigned char * const start,
 			}
 			curr += bytes;
 		}
-	} else {
-		lastval = readmem32(last);
+		last = curr - off;
 	}
-	if (curr < (end - 3) && readmem32(curr) == (unsigned int)lastval)
+	if (curr < (end - 3)) {
+		lastval = readmem32(last);
+		currval = readmem32(curr);
+		if (lastval != currval) {
+			return (curr - start) +
+			    (__builtin_ctz(lastval ^ currval) >> 3);
+		}
+		last += 4;
 		curr += 4;
-	if (curr < (end - 1) && readmem16(curr) == (unsigned short)lastval)
+	}
+	if (curr < (end - 1) && readmem16(last) == readmem16(curr)) {
+		last += 2;
 		curr += 2;
-	if (curr < end && *curr == (unsigned char)lastval)
+	}
+	if (curr < end && *last == *curr)
 		curr++;
 
 	return curr - start;
