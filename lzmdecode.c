@@ -17,12 +17,12 @@ __attribute__((aligned(64)))
 const unsigned int mask[5] = { 0, 0xFF, 0xFFFF, 0xFFFFFF, 0xFFFFFFFF };
 
 static inline const unsigned char *
-decode_offset(const unsigned char * const in, unsigned int * const length)
+decode_offset(const unsigned char * const in, unsigned int * const offset)
 {
 	const unsigned int len = readmem32(in);
 	const unsigned int bytes = __builtin_ctz(len) + 1;
 
-	*length = (len & mask[bytes]) >> bytes;
+	*offset = (len & mask[bytes]) >> bytes;
 
 	return in + bytes;
 }
